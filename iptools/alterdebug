@@ -1,0 +1,43 @@
+# IPs Debugging Alternative Method
+
+# To avoid the "CIDR-IANA Clean" method (which excludes the reserved IANA addresses from blackip)
+# which can cause your terminal to collapse, you can use this alternative step-by-step method
+
+# Step 1: Copy ACL
+sudo cp blackip.txt /etc/acl/blackip.txt
+
+# Step 2: Reload Squid
+sudo squid -k reconfigure 2> squid-error.txt
+
+# Note: Remember Edit /etc/squid/squid.conf:
+# INSERT YOUR OWN RULE(S) HERE TO ALLOW ACCESS FROM YOUR CLIENTS
+# acl blackip dst "/etc/acl/blackip.txt"
+# http_access deny blackip
+
+# Step 3: debug squid-error.txt
+ipRegExp="(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
+grep -oP "$ipRegExp" squid-error.txt | sort -t . -k 1,1n -k 2,2n -k 3,3n -k 4,4n -k 5,5n -k 6,6n -k 7,7n -k 8,8n -k 9,9n | uniq > clean.txt
+
+# Step 4: Remove manually IANA IP (without bar CIDR) from clean.txt
+
+0.0.0.0
+10.0.0.0
+100.64.0.0
+127.0.0.0
+169.254.0.0
+172.16.0.0
+192.0.0.0
+192.0.2.0
+192.168.0.0
+198.18.0.0
+198.51.100.0
+203.0.113.0
+224.0.0.0
+240.0.0.0
+255.255.255.255
+
+# Step 5: Run alterdebug.py
+chmod +x alterdebug.py && python alterdebug.py
+
+# Step 6: Reorganize
+sort -t . -k 1,1n -k 2,2n -k 3,3n -k 4,4n -k 5,5n -k 6,6n -k 7,7n -k 8,8n -k 9,9n out.txt | uniq > blackip.txt
